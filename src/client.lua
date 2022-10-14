@@ -1,97 +1,92 @@
--- Street Name
-Citizen.CreateThread( function()
-	local lastStreetA = 0
-	local lastStreetB = 0
+local zones = Config.zones
+local vehicleAllowed = false
 
-	while Config.streetName.show do
-		Citizen.Wait(0)
+Citizen.CreateThread(function()
+	while true do
+		Citizen.Wait(1000)
 
-		local playerPos = GetEntityCoords(PlayerPedId(), true)
-		local streetA, streetB = GetStreetNameAtCoord(playerPos.x, playerPos.y, playerPos.z)
-		street = {}
+		if IsVehicleAllowed(GetVehiclePedIsIn(PlayerPedId())) then
+			if not vehicleAllowed then
+				vehicleAllowed = true
+				startStreetThread()
+				startCompassThread()
 
-		if not ((streetA == lastStreetA or streetA == lastStreetB) and (streetB == lastStreetA or streetB == lastStreetB)) then
-			lastStreetA = streetA
-			lastStreetB = streetB
+				SendNUIMessage({ action = "showUI" })
+			end
+		elseif vehicleAllowed then
+			vehicleAllowed = false
+
+			SendNUIMessage({ action = "hideUI" })
 		end
-
-		if lastStreetA ~= 0 then
-			table.insert(street, GetStreetNameFromHashKey(lastStreetA))
-		end
-
-		if lastStreetB ~= 0 then
-			table.insert(street, GetStreetNameFromHashKey(lastStreetB))
-		end
-
-		street = table.concat(street, " & ")
-
-		if street ~= laststreet then
-			SendNUIMessage({action = "display", type = street})
-			Citizen.Wait(100)
-		end
-		laststreet = street
-		Citizen.Wait(100)
 	end
 end)
 
+function startStreetThread()
+	Citizen.CreateThread(function()
+		local currentStreet = {}
+		local lastStreetName
+		while vehicleAllowed do
+			local ped = PlayerPedId()
+			local vehicle = GetVehiclePedIsIn(ped)
 
--- Compass
-Citizen.CreateThread( function()
-	local heading, lastHeading = 0, 1
+			currentStreet = {}
 
-	while Config.compass.show do
-		Citizen.Wait(0)
+			-- Current street
+			local cCoord = GetEntityCoords(ped)
+			local streetA, _ = GetStreetNameAtCoord(cCoord.x, cCoord.y, cCoord.z)
 
-		if Config.compass.followGameplayCam then
+			-- Ahead street
+			local nCoord = GetOffsetFromEntityInWorldCoords(vehicle, 0.0, 20.0, 0.5)
+			local streetB, _ = GetStreetNameAtCoord(nCoord.x, nCoord.y, nCoord.z)
+	
+			if streetA ~= 0 then
+				table.insert(currentStreet, GetStreetNameFromHashKey(streetA))
+			end
+
+			if streetB ~= 0 and streetA ~= streetB then
+				local streetBName = GetStreetNameFromHashKey(streetB)
+				if GetStreetNameFromHashKey(streetA) ~= streetBName then
+					table.insert(currentStreet, "(".. streetBName .. ")")
+				end
+			end
+		
+			currentStreet = table.concat(currentStreet, " ")
+
+			local currentZone = GetNameOfZone(cCoord.x, cCoord.y, cCoord.z)
+			local zoneName = (zones[currentZone] or "")
+			SendNUIMessage({action = "setInformation", zone = zoneName, street = currentStreet})
+			Citizen.Wait(500)
+		end
+	end)
+end
+
+function startCompassThread()
+	Citizen.CreateThread( function()
+		local heading, lastHeading = 0, 1
+		while vehicleAllowed do
 			-- Converts [-180, 180] to [0, 360] where E = 90 and W = 270
 			local camRot = GetGameplayCamRot(0)
-			heading = tostring(round(360.0 - ((camRot.z + 360.0) % 360.0)))
-		else
-			-- Converts E = 270 to E = 90
-			heading = tostring(round(360.0 - GetEntityHeading(PlayerPedId())))
+			heading = round(360.0 - ((camRot.z + 360.0) % 360.0))
+			
+			if heading == 360 then 
+				heading = 0 
+			end
+
+			if heading ~= lastHeading then
+				SendNUIMessage({ action = "setCompassRotation", rotation = heading })
+			end
+			lastHeading = heading
+			Citizen.Wait(30)
 		end
-		if heading == '360' then heading = '0' end
-		if heading ~= lastHeading then
-			SendNUIMessage({ action = "display", value = heading })
-			Citizen.Wait(2)
+	end)
+end
+
+function IsVehicleAllowed(vehicle)
+	local model = GetEntityModel(vehicle)
+	for k, v in pairs(Config.allowedVehicles) do
+		if GetHashKey(v) == model then
+			return true
 		end
-		lastHeading = heading
 	end
-end)
-
-
-Citizen.CreateThread( function()
-	local lastStreetA = 0
-	local lastStreetB = 0
-
-	while Config.streetName.show do
-		Citizen.Wait(0)
-
-		local playerPos = GetEntityCoords(PlayerPedId(), true)
-		local streetA, streetB = GetStreetNameAtCoord(playerPos.x, playerPos.y, playerPos.z)
-		street = {}
-
-		if not ((streetA == lastStreetA or streetA == lastStreetB) and (streetB == lastStreetA or streetB == lastStreetB)) then
-			lastStreetA = streetA
-			lastStreetB = streetB
-		end
-
-		if lastStreetA ~= 0 then
-			table.insert(street, GetStreetNameFromHashKey(lastStreetA))
-		end
-
-		if lastStreetB ~= 0 then
-			table.insert(street, GetStreetNameFromHashKey(lastStreetB))
-		end
-
-		street = table.concat(street, " & ")
-
-		if street ~= laststreet then
-			SendNUIMessage({action = "display", type = street})
-			Citizen.Wait(100)
-		end
-		laststreet = street
-		Citizen.Wait(100)
-	end
-end)
-
+	return false
+end

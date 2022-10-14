@@ -1,27 +1,33 @@
-window.addEventListener("message", function (event) {
-	if (event.data.action == "display") {
-		type = event.data.type;
-		value = event.data.value;
+const actions = {
+	showUI,
+	hideUI,
 
-		if (type === null) {
-			$(".street").hide();
-			$(".compass").hide();
-		} else {
-			$(".street").html(type);
-			$(".street").show();
-			$(".compass").html(value);
-			$(".compass").show();
+	setInformation,
+	setCompassRotation,
+}
 
-			if (value !== undefined) {
-				bar = document.getElementsByTagName("svg")[0];
-				bar.setAttribute("viewBox", "" + (value - 90) + " 0 180 5");
-				heading = document.getElementsByTagName("svg")[1];
-				heading.setAttribute("viewBox", "" + (value - 90) + " 0 180 1.5");
-			}
-		}
+function showUI() {
+	$(".ui").fadeIn();
+}
 
-		$(".ui").fadeIn();
-	} else if (event.data.action == "hide") {
-		$(".ui").fadeOut();
-	}
+function hideUI() {
+    $(".ui").fadeOut();
+}
+
+function setInformation({ zone, street }) {
+	$(".zone").text(zone);
+	$(".street").text(street);
+}
+
+const barElement = document.getElementsByTagName("svg")[0];
+const headingElement = document.getElementsByTagName("svg")[1];
+function setCompassRotation({ rotation }) {
+	barElement.setAttribute("viewBox", "" + (rotation - 90) + " 0 180 5");
+	headingElement.setAttribute("viewBox", "" + (rotation - 90 - 0.5) + " 0 180 1");
+}
+
+window.addEventListener("message", (event) => {
+	const { data } = event;
+	if (actions[data.action])
+		actions[data.action](data);
 });

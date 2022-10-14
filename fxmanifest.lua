@@ -4,6 +4,7 @@ game 'gta5'
 version '2.0.0'
 
 client_scripts {
+	"config/config.lua",
 	"src/utils.lua",
 	"src/client.lua",
 }
