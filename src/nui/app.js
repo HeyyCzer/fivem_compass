@@ -19,11 +19,11 @@ function setInformation({ zone, street }) {
 	$(".street").text(street);
 }
 
-const barElement = document.getElementsByTagName("svg")[0];
-const headingElement = document.getElementsByTagName("svg")[1];
+const barElement = document.getElementsByTagName("svg")[1];
+const headingElement = document.getElementsByTagName("svg")[0];
 function setCompassRotation({ rotation }) {
 	barElement.setAttribute("viewBox", "" + (rotation - 90) + " 0 180 5");
-	headingElement.setAttribute("viewBox", "" + (rotation - 90 - 0.5) + " 0 180 1");
+	headingElement.setAttribute("viewBox", "" + (rotation - 90 - 1) + " -5 180 1");
 }
 
 window.addEventListener("message", (event) => {

@@ -5,14 +5,10 @@
 
 body {
 	font-family: "Roboto", sans-serif;
-	overflow: hidden;
 }
 
 .ui {
 	z-index: 1000;
-
-	position: absolute;
-	bottom: 0;
 
 	display: flex;
 	justify-content: center;
@@ -20,7 +16,7 @@ body {
 
 .zone,
 .street {
-	margin: auto 20px 10px;
+	margin: 10px 20px;
 
 	font-size: 14px;
 	font-weight: 500;
@@ -34,9 +30,9 @@ body {
 
 .cursor {
 	position: absolute;
-	bottom: -15px;
+	top: -15px;
 	left: 50%;
-	transform: translateX(-50%) rotate(180deg);
+	transform: translateX(-50%);
 
 	font-size: 25px;
 	color: #ffc300;
